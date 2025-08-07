@@ -18,19 +18,19 @@
   - Handle wallet connection state changes
   - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-- [-] 4. Create contract interaction utilities
+- [x] 4. Create contract interaction utilities
   - Set up ethers.js contract instances for SecurityDepositPool and USDT
   - Implement contract address configuration from environment variables
   - Create typed contract interaction functions using SecurityDepositPool types
   - _Requirements: 2.4_
 
-- [ ] 5. Implement deposit status checking functionality
+- [x] 5. Implement deposit status checking functionality
   - Create function to check hasDeposited mapping for connected wallet
   - Implement 30-second polling mechanism for deposit status
   - Handle contract read errors and fallback scenarios
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 6. Build approval transaction handling
+- [x] 6. Build approval transaction handling
   - Implement USDT contract approval function
   - Create loading state management for approval transactions
   - Add transaction error handling and user feedback
