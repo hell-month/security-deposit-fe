@@ -59,7 +59,7 @@ export const ErrorPopup = ({ error, onClose, onRetry, showRetry = false }: Error
 
   return (
     <div 
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="error-title"
@@ -67,28 +67,17 @@ export const ErrorPopup = ({ error, onClose, onRetry, showRetry = false }: Error
     >
       <div 
         ref={modalRef}
-        className="bg-gray-900/95 backdrop-blur-sm border border-red-500/50 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 ease-out animate-in slide-in-from-bottom-4"
+        className="bg-gray-800/95 backdrop-blur-sm border border-gray-600/40 rounded-2xl shadow-2xl max-w-md w-full mx-6 transform transition-all duration-300 ease-out animate-in slide-in-from-bottom-4"
+        style={{
+          padding: `12px`,
+          display: 'flex',
+          flexDirection: `column`,
+          gap: `8px`,
+        }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700/50">
-          <div className="flex items-center space-x-3">
-            {/* Error icon with animation */}
-            <div className="flex-shrink-0 w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center">
-              <svg 
-                className="h-6 w-6 text-red-400 animate-pulse" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" 
-                />
-              </svg>
-            </div>
+        <div className="flex items-center justify-between p-8 border-b border-gray-600/30">
+          <div className="flex items-center space-x-4">
             <div>
               <h3 
                 id="error-title" 
@@ -96,14 +85,13 @@ export const ErrorPopup = ({ error, onClose, onRetry, showRetry = false }: Error
               >
                 Transaction Failed
               </h3>
-              <p className="text-sm text-gray-400">Something went wrong</p>
             </div>
           </div>
           
           {/* Close button */}
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-800/50"
+            className="text-gray-400 hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-gray-700/50 cursor-pointer"
             aria-label="Close error dialog"
           >
             <svg 
@@ -123,32 +111,36 @@ export const ErrorPopup = ({ error, onClose, onRetry, showRetry = false }: Error
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <div className="bg-red-900/20 border border-red-800/50 rounded-xl p-4 mb-6">
+        <div className="p-8" style={{
+              display: `flex`,
+                  flexDirection: `column`,
+                  gap: `8px`,
+        }}>
+          <div className="rounded-xl p-6 mb-8">
             <p 
               id="error-description"
-              className="text-red-200 text-sm leading-relaxed"
+              className="text-gray-200 text-sm leading-relaxed"
             >
               {formatErrorMessage(error)}
             </p>
           </div>
 
           {/* Action buttons */}
-          <div className="flex space-x-3">
+          <div className="flex space-x-4">
             {showRetry && onRetry && (
               <button
                 onClick={() => {
                   onRetry();
                   onClose();
                 }}
-                className="flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-500 hover:to-purple-500 transition-all duration-200 shadow-lg hover:shadow-blue-500/25 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                className="flex-1 py-4 px-6 bg-gray-600 text-white rounded-xl font-semibold hover:bg-gray-500 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
               >
                 Try Again
               </button>
             )}
             <button
               onClick={onClose}
-              className="flex-1 py-3 px-4 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              className="flex-1 py-4 px-6 bg-gray-700 text-white rounded-xl font-semibold hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800 cursor-pointer"
             >
               Close
             </button>

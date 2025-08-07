@@ -46,12 +46,14 @@ const ActionButtons = ({ approvalStatus, depositStatus, onApprove, onDeposit }: 
   const isDepositPending = depositStatus === 'pending';
   const isAnyTransactionPending = isApprovalPending || isDepositPending;
 
+
+
   // Approve button state logic
   const isApproveButtonDisabled = isAnyTransactionPending || isApprovalCompleted;
   const approveButtonText = isApprovalPending
     ? 'Approving...'
     : isApprovalCompleted
-      ? 'Approved ✓'
+      ? 'Approved'
       : 'Approve USDT';
 
   // Deposit button state logic  
@@ -73,7 +75,7 @@ const ActionButtons = ({ approvalStatus, depositStatus, onApprove, onDeposit }: 
       return `${baseClasses} bg-blue-600 text-white border border-blue-600 cursor-not-allowed`;
     } else {
       // Active state
-      return `${baseClasses} bg-gradient-to-r from-blue-600 to-purple-600 text-white border border-blue-500 hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-500/25`;
+      return `${baseClasses} bg-slate-700 text-white border border-slate-600 hover:bg-slate-600 hover:border-slate-500`;
     }
   };
 
@@ -87,8 +89,8 @@ const ActionButtons = ({ approvalStatus, depositStatus, onApprove, onDeposit }: 
       {/* Progress Header */}
       {/* Step Progress Indicator */}
       <div className="flex items-center justify-center space-x-4 mb-6" style={{
-          gap: `4px`,
-        }}>
+        gap: `4px`,
+      }}>
         <div className="flex items-center" style={{
           gap: `4px`,
         }}>
@@ -150,11 +152,11 @@ const ActionButtons = ({ approvalStatus, depositStatus, onApprove, onDeposit }: 
         aria-label={`Make deposit - ${isDepositButtonDisabled ? 'disabled' : 'enabled'}`}
       >
         {isDepositPending && <LoadingSpinner className="h-5 w-5 text-white mr-2" />}
-        {!isDepositPending && !isDepositButtonDisabled && (
+        {/* {!isDepositPending && !isDepositButtonDisabled && (
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-        )}
+        )} */}
         {depositButtonText}
       </button>
     </div>
@@ -194,14 +196,6 @@ export default function Home() {
       // Check if current allowance is sufficient for deposit
       const isApproved = currentAllowance >= depositAmount;
 
-      console.log('Approval check:', {
-        userAddress,
-        depositAmount: depositAmount.toString(),
-        currentAllowance: currentAllowance.toString(),
-        isApproved,
-        currentApprovalStatus: approvalStatus
-      });
-
       // Only update approval status if it's currently idle or failed
       // Don't override pending or successful states from transactions
       if (approvalStatus === 'idle' || approvalStatus === 'failed') {
@@ -233,7 +227,8 @@ export default function Home() {
       setRetryCount(0);
 
       // If user hasn't deposited, check approval status
-      if (!deposited) {
+      // But don't check during pending transactions to avoid state conflicts
+      if (!deposited && approvalStatus !== 'pending' && depositStatus !== 'pending') {
         await checkApprovalStatus(userAddress);
       }
     } catch (error) {
