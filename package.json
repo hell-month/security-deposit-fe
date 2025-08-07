@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@hell-month/security-deposit-sdk": "^0.0.2",
+    "@hell-month/security-deposit-sdk": "^0.0.3",
     "@rainbow-me/rainbowkit": "^2.2.8",
     "@tanstack/react-query": "^5.84.1",
     "abitype": "^1.0.8",

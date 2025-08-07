@@ -121,6 +121,17 @@ export class SecurityDepositPoolUtils {
       return await this.contract.hasDeposited(userAddress);
     } catch (error) {
       console.error('Error checking deposit status:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('timeout')) {
+          throw new Error('Network error while checking deposit status. Please check your connection.');
+        } else if (error.message.includes('rate limit') || error.message.includes('429')) {
+          throw new Error('Rate limited while checking deposit status. Please wait and try again.');
+        } else if (error.message.includes('invalid address')) {
+          throw new Error('Invalid wallet address provided.');
+        } else {
+          throw new Error('Failed to check deposit status. Please try again.');
+        }
+      }
       throw new Error('Failed to check deposit status');
     }
   }
@@ -134,6 +145,15 @@ export class SecurityDepositPoolUtils {
       return await this.contract.flatDepositAmount();
     } catch (error) {
       console.error('Error getting deposit amount:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('timeout')) {
+          throw new Error('Network error while getting deposit amount. Please check your connection.');
+        } else if (error.message.includes('rate limit') || error.message.includes('429')) {
+          throw new Error('Rate limited while getting deposit amount. Please wait and try again.');
+        } else {
+          throw new Error('Failed to get deposit amount from contract. Please try again.');
+        }
+      }
       throw new Error('Failed to get deposit amount');
     }
   }
@@ -152,6 +172,21 @@ export class SecurityDepositPoolUtils {
       return tx;
     } catch (error) {
       console.error('Error approving USDT:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('user rejected') || error.message.includes('User denied')) {
+          throw new Error('User rejected the approval transaction.');
+        } else if (error.message.includes('insufficient funds') || error.message.includes('balance')) {
+          throw new Error('Insufficient ETH balance for gas fees.');
+        } else if (error.message.includes('gas') || error.message.includes('Gas')) {
+          throw new Error('Gas estimation failed. Please try again with higher gas settings.');
+        } else if (error.message.includes('network') || error.message.includes('timeout')) {
+          throw new Error('Network error during approval. Please check your connection.');
+        } else if (error.message.includes('nonce')) {
+          throw new Error('Transaction nonce error. Please reset your wallet account.');
+        } else {
+          throw new Error('Failed to approve USDT spending. Please try again.');
+        }
+      }
       throw new Error('Failed to approve USDT spending');
     }
   }
@@ -183,6 +218,27 @@ export class SecurityDepositPoolUtils {
       return tx;
     } catch (error) {
       console.error('Error making deposit:', error);
+      if (error instanceof Error) {
+        if (error.message.includes('user rejected') || error.message.includes('User denied')) {
+          throw new Error('User rejected the deposit transaction.');
+        } else if (error.message.includes('insufficient funds') || error.message.includes('balance')) {
+          throw new Error('Insufficient ETH balance for gas fees.');
+        } else if (error.message.includes('gas') || error.message.includes('Gas')) {
+          throw new Error('Gas estimation failed. Please try again with higher gas settings.');
+        } else if (error.message.includes('network') || error.message.includes('timeout')) {
+          throw new Error('Network error during deposit. Please check your connection.');
+        } else if (error.message.includes('allowance') || error.message.includes('ERC20: insufficient allowance')) {
+          throw new Error('USDT allowance insufficient. Please approve USDT spending first.');
+        } else if (error.message.includes('already deposited')) {
+          throw new Error('You have already made a deposit to this contract.');
+        } else if (error.message.includes('reverted') || error.message.includes('execution reverted')) {
+          throw new Error('Transaction was reverted by the contract. Please check contract conditions.');
+        } else if (error.message.includes('nonce')) {
+          throw new Error('Transaction nonce error. Please reset your wallet account.');
+        } else {
+          throw new Error('Failed to make deposit. Please try again.');
+        }
+      }
       throw new Error('Failed to make deposit');
     }
   }
@@ -221,16 +277,16 @@ export class SecurityDepositPoolUtils {
  * @returns BrowserProvider - Ethers browser provider
  */
 function walletClientToProvider(walletClient: {
-  chain: { id: number; name: string; contracts?: { ensRegistry?: { address: string } } };
+  chain: { id: number; name: string; contracts?: Record<string, unknown> };
   transport: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
 }): BrowserProvider {
   const { chain, transport } = walletClient;
   const network = {
     chainId: chain.id,
     name: chain.name,
-    ensAddress: chain.contracts?.ensRegistry?.address,
+    ensAddress: (chain.contracts as { ensRegistry?: { address: string } })?.ensRegistry?.address,
   };
-  const provider = new BrowserProvider(transport as { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> }, network);
+  const provider = new BrowserProvider(transport, network);
   return provider;
 }
 
@@ -239,14 +295,28 @@ function walletClientToProvider(walletClient: {
  * This will be used with RainbowKit's wallet connection
  */
 export async function createContractUtils(): Promise<SecurityDepositPoolUtils> {
-  const walletClient = await getWalletClient(config);
-  if (!walletClient) {
-    throw new Error('Wallet not connected');
+  try {
+    const walletClient = await getWalletClient(config);
+    if (!walletClient) {
+      throw new Error('Wallet not connected');
+    }
+    
+    const provider = walletClientToProvider(walletClient);
+    const signer = await provider.getSigner();
+    return new SecurityDepositPoolUtils(signer);
+  } catch (error) {
+    console.error('Error creating contract utils:', error);
+    if (error instanceof Error) {
+      if (error.message.includes('network') || error.message.includes('Network')) {
+        throw new Error('Network connection error. Please check your internet connection and try again.');
+      } else if (error.message.includes('Wallet not connected')) {
+        throw new Error('Wallet not connected. Please connect your wallet first.');
+      } else {
+        throw new Error('Failed to initialize contract connection. Please try again.');
+      }
+    }
+    throw error;
   }
-  
-  const provider = walletClientToProvider(walletClient);
-  const signer = await provider.getSigner();
-  return new SecurityDepositPoolUtils(signer);
 }
 
 /**
@@ -254,12 +324,26 @@ export async function createContractUtils(): Promise<SecurityDepositPoolUtils> {
  * This can be used without wallet connection
  */
 export async function createReadOnlyContractUtils(): Promise<SecurityDepositPoolUtils> {
-  const publicClient = getPublicClient(config);
-  if (!publicClient) {
-    throw new Error('Public client not available');
+  try {
+    const publicClient = getPublicClient(config);
+    if (!publicClient) {
+      throw new Error('Public client not available');
+    }
+    
+    // Create a read-only provider using the public client
+    const provider = new BrowserProvider(publicClient.transport);
+    return new SecurityDepositPoolUtils(provider);
+  } catch (error) {
+    console.error('Error creating read-only contract utils:', error);
+    if (error instanceof Error) {
+      if (error.message.includes('network') || error.message.includes('Network')) {
+        throw new Error('Network connection error. Please check your internet connection and try again.');
+      } else if (error.message.includes('Public client not available')) {
+        throw new Error('Unable to connect to blockchain network. Please try again.');
+      } else {
+        throw new Error('Failed to initialize read-only contract connection. Please try again.');
+      }
+    }
+    throw error;
   }
-  
-  // Create a read-only provider using the public client
-  const provider = new BrowserProvider(publicClient.transport);
-  return new SecurityDepositPoolUtils(provider);
 }
