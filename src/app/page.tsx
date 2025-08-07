@@ -9,23 +9,23 @@ import { ErrorPopup } from './components/ErrorPopup';
 
 // Loading spinner component for buttons
 const LoadingSpinner = ({ className = "h-5 w-5" }: { className?: string }) => (
-  <svg 
-    className={`animate-spin -ml-1 mr-3 ${className}`} 
-    xmlns="http://www.w3.org/2000/svg" 
-    fill="none" 
+  <svg
+    className={`animate-spin -ml-1 mr-3 ${className}`}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
     viewBox="0 0 24 24"
   >
-    <circle 
-      className="opacity-25" 
-      cx="12" 
-      cy="12" 
-      r="10" 
-      stroke="currentColor" 
+    <circle
+      className="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
       strokeWidth="4"
     />
-    <path 
-      className="opacity-75" 
-      fill="currentColor" 
+    <path
+      className="opacity-75"
+      fill="currentColor"
       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
     />
   </svg>
@@ -45,53 +45,103 @@ const ActionButtons = ({ approvalStatus, depositStatus, onApprove, onDeposit }: 
   const isApprovalCompleted = approvalStatus === 'approved';
   const isDepositPending = depositStatus === 'pending';
   const isAnyTransactionPending = isApprovalPending || isDepositPending;
-  
+
   // Approve button state logic
   const isApproveButtonDisabled = isAnyTransactionPending || isApprovalCompleted;
-  const approveButtonText = isApprovalPending 
-    ? 'Approving...' 
-    : isApprovalCompleted 
-    ? 'Approved' 
-    : 'Approve USDT';
-  
+  const approveButtonText = isApprovalPending
+    ? 'Approving...'
+    : isApprovalCompleted
+      ? 'Approved ✓'
+      : 'Approve USDT';
+
   // Deposit button state logic  
   const isDepositButtonDisabled = !isApprovalCompleted || isDepositPending;
-  const depositButtonText = isDepositPending ? 'Depositing...' : 'Deposit';
-  
+  const depositButtonText = isDepositPending ? 'Processing...' : 'Complete Deposit';
+
   // Button styling based on state
-  const getButtonClassName = (isDisabled: boolean, isPending: boolean) => {
-    const baseClasses = "w-full py-3 px-6 rounded-lg font-medium border-2 transition-colors flex items-center justify-center";
-    
-    if (isDisabled && !isPending) {
+  const getButtonClassName = (isDisabled: boolean, isPending: boolean, isCompleted: boolean = false) => {
+    const baseClasses = "w-full max-w-[300px] py-4 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center shadow-lg cursor-pointer";
+
+    if (isCompleted) {
+      // Completed state (approved)
+      return `${baseClasses} bg-green-600/20 text-green-400 border border-green-600 cursor-not-allowed`;
+    } else if (isDisabled && !isPending) {
       // Disabled state (not pending)
-      return `${baseClasses} bg-gray-600 text-gray-400 border-gray-600 cursor-not-allowed`;
+      return `${baseClasses} bg-gray-700/50 text-gray-500 border border-gray-700 cursor-not-allowed`;
     } else if (isPending) {
       // Loading state
-      return `${baseClasses} bg-gray-600 text-white border-gray-600 cursor-not-allowed`;
+      return `${baseClasses} bg-blue-600 text-white border border-blue-600 cursor-not-allowed`;
     } else {
       // Active state
-      return `${baseClasses} bg-white text-black border-white hover:bg-gray-100`;
+      return `${baseClasses} bg-gradient-to-r from-blue-600 to-purple-600 text-white border border-blue-500 hover:from-blue-500 hover:to-purple-500 hover:shadow-blue-500/25`;
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-center">
-        <p className="text-yellow-400">Deposit Required</p>
-        <p className="text-sm text-gray-400">You need to complete the deposit process</p>
+    <div className="space-y-6" style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+      alignItems: `center`
+    }}>
+      {/* Progress Header */}
+      {/* Step Progress Indicator */}
+      <div className="flex items-center justify-center space-x-4 mb-6" style={{
+          gap: `4px`,
+        }}>
+        <div className="flex items-center" style={{
+          gap: `4px`,
+        }}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isApprovalCompleted ? 'bg-green-600 text-white' :
+            isApprovalPending ? 'bg-blue-600 text-white' :
+              'bg-gray-700 text-gray-400'
+            }`}>
+            {isApprovalCompleted ? '✓' : '1'}
+          </div>
+          <span className={`ml-2 text-sm font-medium ${isApprovalCompleted ? 'text-green-400' :
+            isApprovalPending ? 'text-blue-400' :
+              'text-gray-400'
+            }`}>
+            Approve
+          </span>
+        </div>
+
+        <div className={`w-8 h-0.5 ${isApprovalCompleted ? 'bg-green-600' : 'bg-gray-700'}`}></div>
+
+        <div className="flex items-center" style={{
+          gap: `4px`,
+        }}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isDepositPending ? 'bg-blue-600 text-white' :
+            isApprovalCompleted ? 'bg-gray-600 text-white' :
+              'bg-gray-700 text-gray-400'
+            }`}>
+            2
+          </div>
+          <span className={`ml-2 text-sm font-medium ${isDepositPending ? 'text-blue-400' :
+            isApprovalCompleted ? 'text-gray-300' :
+              'text-gray-400'
+            }`}>
+            Deposit
+          </span>
+        </div>
       </div>
-      
+
       {/* Approve button */}
       <button
         onClick={onApprove}
         disabled={isApproveButtonDisabled}
-        className={getButtonClassName(isApproveButtonDisabled, isApprovalPending)}
+        className={`${getButtonClassName(isApproveButtonDisabled, isApprovalPending, isApprovalCompleted)}`}
         aria-label={`Approve USDT spending - ${isApproveButtonDisabled ? 'disabled' : 'enabled'}`}
       >
-        {isApprovalPending && <LoadingSpinner className="h-5 w-5 text-white" />}
+        {isApprovalPending && <LoadingSpinner className="h-5 w-5 text-white mr-2" />}
+        {isApprovalCompleted && (
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        )}
         {approveButtonText}
       </button>
-      
+
       {/* Deposit button */}
       <button
         onClick={onDeposit}
@@ -99,7 +149,12 @@ const ActionButtons = ({ approvalStatus, depositStatus, onApprove, onDeposit }: 
         className={getButtonClassName(isDepositButtonDisabled, isDepositPending)}
         aria-label={`Make deposit - ${isDepositButtonDisabled ? 'disabled' : 'enabled'}`}
       >
-        {isDepositPending && <LoadingSpinner className="h-5 w-5 text-white" />}
+        {isDepositPending && <LoadingSpinner className="h-5 w-5 text-white mr-2" />}
+        {!isDepositPending && !isDepositButtonDisabled && (
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        )}
         {depositButtonText}
       </button>
     </div>
@@ -114,13 +169,13 @@ export default function Home() {
   const [hasDeposited, setHasDeposited] = useState<boolean | null>(null);
   const [depositCheckError, setDepositCheckError] = useState<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Approval transaction state
   const [approvalStatus, setApprovalStatus] = useState<'idle' | 'pending' | 'approved' | 'failed'>('idle');
-  
+
   // Deposit transaction state
   const [depositStatus, setDepositStatus] = useState<'idle' | 'pending' | 'success' | 'failed'>('idle');
-  
+
   const [error, setError] = useState<string | null>(null);
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
@@ -129,16 +184,16 @@ export default function Home() {
   const checkApprovalStatus = useCallback(async (userAddress: string) => {
     try {
       const contractUtils = await createReadOnlyContractUtils();
-      
+
       // Get required deposit amount and current allowance
       const [depositAmount, currentAllowance] = await Promise.all([
         contractUtils.getFlatDepositAmount(),
         contractUtils.getUSDTAllowance(userAddress)
       ]);
-      
+
       // Check if current allowance is sufficient for deposit
       const isApproved = currentAllowance >= depositAmount;
-      
+
       console.log('Approval check:', {
         userAddress,
         depositAmount: depositAmount.toString(),
@@ -146,7 +201,7 @@ export default function Home() {
         isApproved,
         currentApprovalStatus: approvalStatus
       });
-      
+
       // Only update approval status if it's currently idle or failed
       // Don't override pending or successful states from transactions
       if (approvalStatus === 'idle' || approvalStatus === 'failed') {
@@ -164,7 +219,7 @@ export default function Home() {
     try {
       setDepositCheckError(null);
       setNetworkError(null);
-      
+
       // Use fallback contract address from environment if needed
       if (!CONTRACT_ADDRESSES.SECURITY_DEPOSIT_POOL) {
         throw new Error('Security deposit pool contract address not configured');
@@ -173,17 +228,17 @@ export default function Home() {
       const contractUtils = await createReadOnlyContractUtils();
       const deposited = await contractUtils.hasDeposited(userAddress);
       setHasDeposited(deposited);
-      
+
       // Reset retry count on successful check
       setRetryCount(0);
-      
+
       // If user hasn't deposited, check approval status
       if (!deposited) {
         await checkApprovalStatus(userAddress);
       }
     } catch (error) {
       console.error('Error checking deposit status:', error);
-      
+
       // Handle different types of errors with enhanced recovery mechanisms
       if (error instanceof Error) {
         if (error.message.includes('contract address not configured')) {
@@ -193,7 +248,7 @@ export default function Home() {
           const networkErrorMsg = 'Network connection issue. Please check your internet connection.';
           setDepositCheckError(networkErrorMsg);
           setNetworkError('Network Error');
-          
+
           // Implement exponential backoff for network errors
           if (!isRetry && retryCount < 3) {
             const backoffDelay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
@@ -216,7 +271,7 @@ export default function Home() {
         setDepositCheckError('Unknown error occurred while checking deposit status.');
         setNetworkError('Unknown Error');
       }
-      
+
       // Set hasDeposited to null to indicate unknown status
       setHasDeposited(null);
     }
@@ -283,17 +338,17 @@ export default function Home() {
   // Handle USDT approval transaction with enhanced error handling
   const handleApprove = useCallback(async () => {
     if (!address) return;
-    
+
     try {
       setApprovalStatus('pending');
       setError(null);
       setNetworkError(null);
-      
+
       const contractUtils = await createContractUtils();
-      
+
       // Get the required deposit amount
       const depositAmount = await contractUtils.getFlatDepositAmount();
-      
+
       // Check user's USDT balance before attempting approval
       const userBalance = await contractUtils.getUSDTBalance(address);
       if (userBalance < depositAmount) {
@@ -301,21 +356,21 @@ export default function Home() {
         setError('Insufficient USDT balance. You need more USDT to complete the deposit.');
         return;
       }
-      
+
       // Initiate USDT approval transaction
       const approveTx = await contractUtils.approveUSDT(depositAmount);
-      
+
       // Wait for transaction confirmation
       await approveTx.wait();
-      
+
       setApprovalStatus('approved');
-      
+
       // Verify approval status after transaction
       await checkApprovalStatus(address);
     } catch (error) {
       console.error('Approval transaction failed:', error);
       setApprovalStatus('failed');
-      
+
       // Handle different types of errors with enhanced user-friendly messages
       if (error instanceof Error) {
         if (error.message.includes('user rejected') || error.message.includes('User denied')) {
@@ -347,25 +402,25 @@ export default function Home() {
   // Handle deposit transaction with enhanced error handling
   const handleDeposit = useCallback(async () => {
     if (!address || approvalStatus !== 'approved') return;
-    
+
     try {
       setDepositStatus('pending');
       setError(null);
       setNetworkError(null);
-      
+
       const contractUtils = await createContractUtils();
-      
+
       // Double-check approval status before deposit
       const depositAmount = await contractUtils.getFlatDepositAmount();
       const currentAllowance = await contractUtils.getUSDTAllowance(address);
-      
+
       if (currentAllowance < depositAmount) {
         setDepositStatus('failed');
         setError('USDT allowance is insufficient. Please approve USDT spending again.');
         setApprovalStatus('idle'); // Reset approval status so user can re-approve
         return;
       }
-      
+
       // Check user's USDT balance before attempting deposit
       const userBalance = await contractUtils.getUSDTBalance(address);
       if (userBalance < depositAmount) {
@@ -373,22 +428,22 @@ export default function Home() {
         setError('Insufficient USDT balance. You need more USDT to complete the deposit.');
         return;
       }
-      
+
       // Call the deposit function on the security deposit contract
       const depositTx = await contractUtils.deposit();
-      
+
       // Wait for transaction confirmation
       await depositTx.wait();
-      
+
       setDepositStatus('success');
-      
+
       // Update the deposit status immediately to reflect the successful deposit
       setHasDeposited(true);
-      
+
     } catch (error) {
       console.error('Deposit transaction failed:', error);
       setDepositStatus('failed');
-      
+
       // Handle different types of errors with enhanced user-friendly messages
       if (error instanceof Error) {
         if (error.message.includes('user rejected') || error.message.includes('User denied')) {
@@ -433,7 +488,7 @@ export default function Home() {
   const retryTransaction = useCallback(() => {
     setError(null);
     setNetworkError(null);
-    
+
     if (approvalStatus === 'failed') {
       handleApprove();
     } else if (depositStatus === 'failed') {
@@ -450,107 +505,123 @@ export default function Home() {
   }, [address, checkDepositStatus]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center">
-      <div className="max-w-md w-full mx-4">
-        <div className="text-center space-y-6">
-          <h1 className="text-2xl font-medium">Security Deposit Pool</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white flex items-center justify-center p-4">
+      <div className="w-full max-w-lg">
+        {/* Main Card */}
+        <div className="rounded-2xl shadow-2xl p-8" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+              Security Deposit Pool
+            </h1>
+          </div>
 
-          <div className="space-y-4">
-            {/* Wallet connection status */}
-            <div className="text-center">
-              {!isConnected ? (
-                <p className="text-gray-300 mb-4">Connect your wallet to continue</p>
-              ) : showNetworkPrompt ? (
-                <div className="space-y-2">
-                  <p className="text-yellow-400 mb-2">Please switch to Base Sepolia</p>
-                  <p className="text-sm text-gray-400">You&apos;re currently on the wrong network</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-green-400 mb-2">Wallet Connected</p>
-                </div>
-              )}
+          {/* Action Buttons */}
+          <div className="space-y-6" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+          }}>
+            <div className="flex justify-center">
+              <ConnectButton />
             </div>
 
-            {/* Action buttons */}
-            <div className="space-y-3">
-              <div className="flex justify-center">
-                <ConnectButton />
+            {isConnected && showNetworkPrompt && (
+              <button
+                onClick={handleSwitchToBaseSepolia}
+                className="w-full py-4 px-6 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white rounded-xl font-semibold border border-yellow-500 hover:from-yellow-500 hover:to-yellow-400 transition-all duration-200 shadow-lg hover:shadow-yellow-500/25"
+              >
+                Switch to Base Sepolia
+              </button>
+            )}
+
+            {isConnected && !showNetworkPrompt && (
+              <div className="space-y-6" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px'
+              }}>
+                {/* Deposit Success State */}
+                {hasDeposited === true && (
+                  <div className="text-center p-8 bg-green-900/20 rounded-xl border border-green-800">
+                    <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-green-400 text-xl font-bold mb-2">
+                      {depositStatus === 'success' ? 'Deposit Successful!' : 'Already Deposited'}
+                    </h3>
+                    <p className="text-green-300/70 text-sm">
+                      {depositStatus === 'success'
+                        ? 'Your security deposit has been successfully processed'
+                        : 'You have already completed your security deposit'
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {/* Action Buttons for Deposit Flow */}
+                {hasDeposited === false && (
+                  <ActionButtons
+                    approvalStatus={approvalStatus}
+                    depositStatus={depositStatus}
+                    onApprove={handleApprove}
+                    onDeposit={handleDeposit}
+                  />
+                )}
+
+                {/* Loading State */}
+                {hasDeposited === null && !depositCheckError && (
+                  <div className="text-center p-8 bg-blue-900/20 rounded-xl border border-blue-800">
+                    <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <h3 className="text-blue-400 text-lg font-semibold mb-2">Checking Status</h3>
+                    <p className="text-blue-300/70 text-sm">Please wait while we verify your deposit status</p>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {depositCheckError && (
+                  <div className="text-center p-6 bg-red-900/20 rounded-xl border border-red-800">
+                    <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-red-400 font-semibold mb-2">Connection Error</h3>
+                    <p className="text-red-300/70 text-sm mb-3">{depositCheckError}</p>
+                    {networkError && (
+                      <p className="text-xs text-yellow-400 mb-3 px-3 py-1 bg-yellow-900/20 rounded-full inline-block">
+                        {networkError}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mb-4">
+                      {retryCount > 0 ? `Retry attempt ${retryCount}/3` : 'Auto-retry every 30 seconds'}
+                    </p>
+                    <button
+                      onClick={retryDepositStatusCheck}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      Retry Now
+                    </button>
+                  </div>
+                )}
               </div>
-
-              {isConnected && showNetworkPrompt && (
-                <button
-                  onClick={handleSwitchToBaseSepolia}
-                  className="w-full py-3 px-6 bg-yellow-600 text-white rounded-lg font-medium border-2 border-yellow-600 hover:bg-yellow-700 transition-colors"
-                >
-                  Switch to Base Sepolia
-                </button>
-              )}
-
-              {isConnected && !showNetworkPrompt && (
-                <div className="space-y-3">
-                  {/* Deposit status display */}
-                  {hasDeposited === true && (
-                    <div className="text-center">
-                      <p className="text-green-400 text-lg font-medium">
-                        {depositStatus === 'success' ? 'Deposit Successful!' : 'Deposited'}
-                      </p>
-                      <p className="text-sm text-gray-400">
-                        {depositStatus === 'success' 
-                          ? 'Your security deposit has been successfully processed'
-                          : 'You have already paid the security deposit'
-                        }
-                      </p>
-                    </div>
-                  )}
-                  
-                  {hasDeposited === false && (
-                    <ActionButtons
-                      approvalStatus={approvalStatus}
-                      depositStatus={depositStatus}
-                      onApprove={handleApprove}
-                      onDeposit={handleDeposit}
-                    />
-                  )}
-                  
-                  {hasDeposited === null && !depositCheckError && (
-                    <div className="text-center">
-                      <p className="text-blue-400">Checking deposit status...</p>
-                      <p className="text-sm text-gray-400">Please wait while we verify your deposit</p>
-                    </div>
-                  )}
-                  
-                  {depositCheckError && (
-                    <div className="text-center space-y-3">
-                      <div>
-                        <p className="text-red-400">Error checking deposit status</p>
-                        <p className="text-sm text-gray-400">{depositCheckError}</p>
-                        {networkError && (
-                          <p className="text-xs text-yellow-400 mt-1">Error Type: {networkError}</p>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1">
-                          {retryCount > 0 ? `Retry attempt ${retryCount}/3` : 'Retrying automatically every 30 seconds'}
-                        </p>
-                      </div>
-                      <button
-                        onClick={retryDepositStatusCheck}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                      >
-                        Retry Now
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
-      
+
       {/* Error popup */}
-      <ErrorPopup 
-        error={error} 
-        onClose={closeErrorPopup} 
+      <ErrorPopup
+        error={error}
+        onClose={closeErrorPopup}
         onRetry={retryTransaction}
         showRetry={approvalStatus === 'failed' || depositStatus === 'failed'}
       />
