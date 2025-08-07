@@ -58,7 +58,7 @@ const ActionButtons = ({ approvalStatus, depositStatus, onApprove, onDeposit }: 
 
   // Deposit button state logic  
   const isDepositButtonDisabled = !isApprovalCompleted || isDepositPending;
-  const depositButtonText = isDepositPending ? 'Processing...' : 'Complete Deposit';
+  const depositButtonText = isDepositPending ? 'Processing...' : 'Deposit 73 USDT';
 
   // Button styling based on state
   const getButtonClassName = (isDisabled: boolean, isPending: boolean, isCompleted: boolean = false) => {
