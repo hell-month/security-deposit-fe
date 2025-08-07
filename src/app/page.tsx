@@ -542,21 +542,10 @@ export default function Home() {
               }}>
                 {/* Deposit Success State */}
                 {hasDeposited === true && (
-                  <div className="text-center p-8 bg-green-900/20 rounded-xl border border-green-800">
-                    <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-green-400 text-xl font-bold mb-2">
-                      {depositStatus === 'success' ? 'Deposit Successful!' : 'Already Deposited'}
-                    </h3>
-                    <p className="text-green-300/70 text-sm">
-                      {depositStatus === 'success'
-                        ? 'Your security deposit has been successfully processed'
-                        : 'You have already completed your security deposit'
-                      }
-                    </p>
+                  <div className="text-center p-3 bg-green-900/20 rounded-lg border border-green-800">
+                    <span className="text-green-400 text-sm font-medium">
+                      ✓ {depositStatus === 'success' ? 'Deposit Complete' : 'Already Deposited'}
+                    </span>
                   </div>
                 )}
 
@@ -572,38 +561,25 @@ export default function Home() {
 
                 {/* Loading State */}
                 {hasDeposited === null && !depositCheckError && (
-                  <div className="text-center p-8 bg-blue-900/20 rounded-xl border border-blue-800">
-                    <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                  <div className="text-center p-3 bg-blue-900/20 rounded-lg border border-blue-800">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-blue-400 text-sm">Checking status...</span>
                     </div>
-                    <h3 className="text-blue-400 text-lg font-semibold mb-2">Checking Status</h3>
-                    <p className="text-blue-300/70 text-sm">Please wait while we verify your deposit status</p>
                   </div>
                 )}
 
                 {/* Error State */}
                 {depositCheckError && (
-                  <div className="text-center p-6 bg-red-900/20 rounded-xl border border-red-800">
-                    <div className="w-12 h-12 bg-red-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
+                  <div className="text-center p-3 bg-red-900/20 rounded-lg border border-red-800">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <span className="text-red-400 text-sm">⚠ Connection Error</span>
                     </div>
-                    <h3 className="text-red-400 font-semibold mb-2">Connection Error</h3>
-                    <p className="text-red-300/70 text-sm mb-3">{depositCheckError}</p>
-                    {networkError && (
-                      <p className="text-xs text-yellow-400 mb-3 px-3 py-1 bg-yellow-900/20 rounded-full inline-block">
-                        {networkError}
-                      </p>
-                    )}
-                    <p className="text-xs text-gray-500 mb-4">
-                      {retryCount > 0 ? `Retry attempt ${retryCount}/3` : 'Auto-retry every 30 seconds'}
-                    </p>
                     <button
                       onClick={retryDepositStatusCheck}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                      className="px-4 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
                     >
-                      Retry Now
+                      Retry
                     </button>
                   </div>
                 )}
