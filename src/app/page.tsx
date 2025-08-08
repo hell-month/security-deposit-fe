@@ -2,10 +2,12 @@
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { createReadOnlyContractUtils, createContractUtils, CONTRACT_ADDRESSES } from './contracts';
 import { ErrorPopup } from './components/ErrorPopup';
+import { config } from './config';
+
+const currentChainId = config.chains[0].id;
 
 // Loading spinner component for buttons
 const LoadingSpinner = ({ className = "h-5 w-5" }: { className?: string }) => (
@@ -270,7 +272,7 @@ export default function Home() {
       // Set hasDeposited to null to indicate unknown status
       setHasDeposited(null);
     }
-  }, [checkApprovalStatus, retryCount]);
+  }, [approvalStatus, checkApprovalStatus, depositStatus, retryCount]);
 
   // Start polling for deposit status every 30 seconds
   const startDepositStatusPolling = useCallback((userAddress: string) => {
@@ -298,7 +300,7 @@ export default function Home() {
 
   // Check if user is on Base Sepolia
   useEffect(() => {
-    if (isConnected && chainId !== baseSepolia.id) {
+    if (isConnected && chainId !== currentChainId) {
       setShowNetworkPrompt(true);
     } else {
       setShowNetworkPrompt(false);
@@ -307,7 +309,7 @@ export default function Home() {
 
   // Handle deposit status polling based on wallet connection and network
   useEffect(() => {
-    if (isConnected && address && chainId === baseSepolia.id) {
+    if (isConnected && address && chainId === currentChainId) {
       // Start polling when wallet is connected and on correct network
       startDepositStatusPolling(address);
     } else {
@@ -326,8 +328,8 @@ export default function Home() {
     };
   }, [isConnected, address, chainId, startDepositStatusPolling, stopDepositStatusPolling]);
 
-  const handleSwitchToBaseSepolia = () => {
-    switchChain({ chainId: baseSepolia.id });
+  const handleSwitchToConfiguredChain = () => {
+    switchChain({ chainId: currentChainId });
   };
 
   // Handle USDT approval transaction with enhanced error handling
@@ -527,10 +529,10 @@ export default function Home() {
 
             {isConnected && showNetworkPrompt && (
               <button
-                onClick={handleSwitchToBaseSepolia}
+                onClick={handleSwitchToConfiguredChain}
                 className="w-full py-4 px-6 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white rounded-xl font-semibold border border-yellow-500 hover:from-yellow-500 hover:to-yellow-400 transition-all duration-200 shadow-lg hover:shadow-yellow-500/25"
               >
-                Switch to Base Sepolia
+                {`Switch to ${config.chains[0].name}`}
               </button>
             )}
 
