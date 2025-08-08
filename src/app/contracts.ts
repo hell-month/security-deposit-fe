@@ -3,11 +3,21 @@ import { SecurityDepositPool__factory, SecurityDepositPool } from '@hell-month/s
 import { getWalletClient, getPublicClient } from '@wagmi/core';
 import { config } from './config';
 
+if (!process.env.NEXT_PUBLIC_SECURITY_DEPOSIT_POOL_ADDRESS) {
+  throw new Error(`NEXT_PUBLIC_SECURITY_DEPOSIT_POOL_ADDRESS`)
+}
+if (!process.env.NEXT_PUBLIC_USDT_ADDRESS) {
+  throw new Error(`NEXT_PUBLIC_USDT_ADDRESS`)
+}
+if (!process.env.NEXT_PUBLIC_CHAIN_ID) {
+  throw new Error(`NEXT_PUBLIC_CHAIN_ID`)
+}
+
 // Contract addresses from environment variables
 export const CONTRACT_ADDRESSES = {
-  SECURITY_DEPOSIT_POOL: process.env.NEXT_PUBLIC_SECURITY_DEPOSIT_POOL_ADDRESS || '',
-  USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS || '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-  CHAIN_ID: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '1'),
+  SECURITY_DEPOSIT_POOL: process.env.NEXT_PUBLIC_SECURITY_DEPOSIT_POOL_ADDRESS,
+  USDT: process.env.NEXT_PUBLIC_USDT_ADDRESS,
+  CHAIN_ID: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID),
 } as const;
 
 /**
@@ -331,7 +341,10 @@ export async function createReadOnlyContractUtils(): Promise<SecurityDepositPool
     }
     
     // Create a read-only provider using the public client
-    const provider = new BrowserProvider(publicClient.transport);
+    const provider = new BrowserProvider(publicClient.transport, {
+      chainId: config.chains[0].id,
+      name: config.chains[0].name,
+    });
     return new SecurityDepositPoolUtils(provider);
   } catch (error) {
     console.error('Error creating read-only contract utils:', error);

@@ -2,10 +2,12 @@
 
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { createReadOnlyContractUtils, createContractUtils, CONTRACT_ADDRESSES } from './contracts';
 import { ErrorPopup } from './components/ErrorPopup';
+import { config } from './config';
+
+const currentChainId = config.chains[0].id;
 
 // Loading spinner component for buttons
 const LoadingSpinner = ({ className = "h-5 w-5" }: { className?: string }) => (
@@ -171,6 +173,7 @@ export default function Home() {
   const [hasDeposited, setHasDeposited] = useState<boolean | null>(null);
   const [depositCheckError, setDepositCheckError] = useState<string | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isApprovalPendingRef = useRef<boolean>(false);
 
   // Approval transaction state
   const [approvalStatus, setApprovalStatus] = useState<'idle' | 'pending' | 'approved' | 'failed'>('idle');
@@ -185,6 +188,10 @@ export default function Home() {
   // Function to check approval status for connected wallet
   const checkApprovalStatus = useCallback(async (userAddress: string) => {
     try {
+      // Avoid overriding UI while approval transaction is pending
+      if (isApprovalPendingRef.current) {
+        return;
+      }
       const contractUtils = await createReadOnlyContractUtils();
 
       // Get required deposit amount and current allowance
@@ -196,10 +203,10 @@ export default function Home() {
       // Check if current allowance is sufficient for deposit
       const isApproved = currentAllowance >= depositAmount;
 
-      // Only update approval status if it's currently idle or failed
-      // Don't override pending or successful states from transactions
-      if (approvalStatus === 'idle' || approvalStatus === 'failed') {
-        setApprovalStatus(isApproved ? 'approved' : 'idle');
+      // Only ever upgrade to 'approved' here; never downgrade to 'idle'.
+      // This avoids flicker during polling while a tx is pending.
+      if (!isApprovalPendingRef.current && isApproved && approvalStatus !== 'approved') {
+        setApprovalStatus('approved');
       }
     } catch (error) {
       console.error('Error checking approval status:', error);
@@ -221,7 +228,8 @@ export default function Home() {
 
       const contractUtils = await createReadOnlyContractUtils();
       const deposited = await contractUtils.hasDeposited(userAddress);
-      setHasDeposited(deposited);
+      // Only ever upgrade to true to avoid flicker due to eventual consistency
+      setHasDeposited(prev => (prev === true ? true : deposited));
 
       // Reset retry count on successful check
       setRetryCount(0);
@@ -270,7 +278,7 @@ export default function Home() {
       // Set hasDeposited to null to indicate unknown status
       setHasDeposited(null);
     }
-  }, [checkApprovalStatus, retryCount]);
+  }, [approvalStatus, checkApprovalStatus, depositStatus, retryCount]);
 
   // Start polling for deposit status every 30 seconds
   const startDepositStatusPolling = useCallback((userAddress: string) => {
@@ -298,7 +306,7 @@ export default function Home() {
 
   // Check if user is on Base Sepolia
   useEffect(() => {
-    if (isConnected && chainId !== baseSepolia.id) {
+    if (isConnected && chainId !== currentChainId) {
       setShowNetworkPrompt(true);
     } else {
       setShowNetworkPrompt(false);
@@ -307,7 +315,7 @@ export default function Home() {
 
   // Handle deposit status polling based on wallet connection and network
   useEffect(() => {
-    if (isConnected && address && chainId === baseSepolia.id) {
+    if (isConnected && address && chainId === currentChainId) {
       // Start polling when wallet is connected and on correct network
       startDepositStatusPolling(address);
     } else {
@@ -316,7 +324,7 @@ export default function Home() {
       setHasDeposited(null);
       setDepositCheckError(null);
       // Reset approval status when wallet disconnects or network changes
-      setApprovalStatus('idle');
+      if (!isApprovalPendingRef.current) setApprovalStatus('idle');
       setDepositStatus('idle');
     }
 
@@ -326,8 +334,8 @@ export default function Home() {
     };
   }, [isConnected, address, chainId, startDepositStatusPolling, stopDepositStatusPolling]);
 
-  const handleSwitchToBaseSepolia = () => {
-    switchChain({ chainId: baseSepolia.id });
+  const handleSwitchToConfiguredChain = () => {
+    switchChain({ chainId: currentChainId });
   };
 
   // Handle USDT approval transaction with enhanced error handling
@@ -335,6 +343,7 @@ export default function Home() {
     if (!address) return;
 
     try {
+      isApprovalPendingRef.current = true;
       setApprovalStatus('pending');
       setError(null);
       setNetworkError(null);
@@ -359,18 +368,21 @@ export default function Home() {
       await approveTx.wait();
 
       setApprovalStatus('approved');
+      isApprovalPendingRef.current = false;
 
       // Verify approval status after transaction
       await checkApprovalStatus(address);
     } catch (error) {
       console.error('Approval transaction failed:', error);
       setApprovalStatus('failed');
+      isApprovalPendingRef.current = false;
 
       // Handle different types of errors with enhanced user-friendly messages
       if (error instanceof Error) {
         if (error.message.includes('user rejected') || error.message.includes('User denied')) {
           // User rejected transaction - don't show error popup, just reset status
           setApprovalStatus('idle');
+          isApprovalPendingRef.current = false;
           return;
         } else if (error.message.includes('insufficient funds') || error.message.includes('balance')) {
           setError('Insufficient USDT balance. Please ensure you have enough USDT in your wallet.');
@@ -427,12 +439,9 @@ export default function Home() {
       // Call the deposit function on the security deposit contract
       const depositTx = await contractUtils.deposit();
 
-      // Wait for transaction confirmation
+      // Wait for on-chain confirmation before updating UI
       await depositTx.wait();
-
       setDepositStatus('success');
-
-      // Update the deposit status immediately to reflect the successful deposit
       setHasDeposited(true);
 
     } catch (error) {
@@ -527,10 +536,10 @@ export default function Home() {
 
             {isConnected && showNetworkPrompt && (
               <button
-                onClick={handleSwitchToBaseSepolia}
+                onClick={handleSwitchToConfiguredChain}
                 className="w-full py-4 px-6 bg-gradient-to-r from-yellow-600 to-yellow-500 text-white rounded-xl font-semibold border border-yellow-500 hover:from-yellow-500 hover:to-yellow-400 transition-all duration-200 shadow-lg hover:shadow-yellow-500/25"
               >
-                Switch to Base Sepolia
+                {`Switch to ${config.chains[0].name}`}
               </button>
             )}
 
