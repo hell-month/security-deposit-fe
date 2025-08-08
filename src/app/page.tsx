@@ -348,7 +348,7 @@ export default function Home() {
       const userBalance = await contractUtils.getUSDTBalance(address);
       if (userBalance < depositAmount) {
         setApprovalStatus('failed');
-        setError('Insufficient USDT balance. You need more USDT to complete the deposit.');
+        setError(`Insufficient USDT balance. You need at least ${depositAmount / BigInt(1e6)} USDT to complete the deposit.`);
         return;
       }
 
@@ -420,7 +420,7 @@ export default function Home() {
       const userBalance = await contractUtils.getUSDTBalance(address);
       if (userBalance < depositAmount) {
         setDepositStatus('failed');
-        setError('Insufficient USDT balance. You need more USDT to complete the deposit.');
+        setError(`Insufficient USDT balance. You need at least ${depositAmount / BigInt(1e6)} USDT to complete the deposit.`);
         return;
       }
 
